@@ -1,0 +1,55 @@
+---
+title: "Assignment 1"
+author: "keerthi Tiyyagura"
+date: "2023-09-24"
+output:
+  word_document: default
+  html_document:
+    df_print: paged
+  pdf_document: default
+---
+#Setting up the ISLR Package
+#Giving the install.packages("ISLR") command in comments because it's averting me from knitting to pdf.
+```{r}
+library(ISLR)
+```
+#Calling the ISLR library
+```{r}
+summary(Carseats)
+```
+#Printing the summary of the Carseats dataset
+```{r}
+View(Carseats)
+```
+#It displays the data frame in the viewer to visually inspect the dataset(just used this command for my clarification)
+```{r}
+str(Carseats)
+```
+#Printing the Structure of the Carseats dataset
+#This dataset contains 400 observations of 11 variables
+```{r}
+head(Carseats,8)
+```
+#Printing the first 8 rows of Carseats dataset
+```{r}
+max(Carseats$Advertising)
+```
+#Maximum value of Advertising attribute
+```{r}
+IQR(Carseats$Price)
+```
+#IQR(interquartile) of Price attribute
+```{r}
+plot(Carseats$Sales,Carseats$Price,main = "Running price during the sales",xlab = "Total Sales",ylab="Total Price")
+abline(lm(Carseats$Price~Carseats$Sales),col="Red",lwd=2)
+```
+#Scatter Plot of Sales against Price
+#This Plot shows the regression line of Sales vs Price and it has a negative slope ,implying a negative correlation ,and the value ranges from 0 to -1
+#Also here we can observe that the regression line's quality of fit with points is good
+```{r}
+correlation<-cor.test(Carseats$Sales,Carseats$Price,method="pearson")
+correlation
+```
+#Calculating the correlation of two attributes
+#The correlation coefficient value is -0.444,it is indicating a negative direction.If one variable increases and other variable decreases the strength of the relationship will be moderate.
+
