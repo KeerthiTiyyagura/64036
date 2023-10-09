@@ -1,0 +1,229 @@
+---
+title: "Assignment 2"
+author: "keerthi Tiyyagura"
+date: "2023-10-08"
+output:
+  html_document: default
+  pdf_document: default
+  word_document: default
+---
+
+```{r}
+#Import the dataset "Online Retail"
+ORetail <- read.csv("C:/Users/keert/Downloads/Online_Retail.csv")
+```
+1. Show the breakdown of the number of transactions by countries i.e., how many transactions are in the dataset for each country (consider all records including cancelled transactions). Show this in total number and also in percentage. Show only countries accounting for more than 1% of the total transactions.
+```{r}
+#Showing the total number of transactions by country
+Country_totalnumber <- table(ORetail$Country)
+Country_totalnumber
+```
+
+```{r}
+# Calculate the percentage of transactions for each country
+transaction_percent <- round(100*prop.table(Country_totalnumber),digits = 2)
+
+# Combine the total number and percentage of transactions into a table
+total <- data.frame(Country=names(Country_totalnumber),
+                    TotalNumber=Country_totalnumber,
+                    Percentage=transaction_percent)
+
+# Subset the table to show only countries accounting for more than 1% of the total transactions
+total <- subset(total,transaction_percent>1)
+total
+```
+2. Create a new variable ‘TransactionValue’ that is the product of the existing ‘Quantity’ and ‘UnitPrice’ variables. Add this variable to the dataframe.
+```{r}
+library(dplyr)
+```
+
+```{r}
+#Creating a new variable ‘TransactionValue’
+ORetail <- ORetail %>% mutate(TransactionValue= Quantity * UnitPrice)
+summary(ORetail$TransactionValue)
+```
+3. Using the newly created variable, TransactionValue, show the breakdown of transaction values by countries i.e. how much money in total has been spent each country. Show this in total sum of transaction values. Show only countries with total transaction exceeding 130,000 British Pound.
+```{r}
+data <- summarise(group_by(ORetail,Country),sum_1= sum(TransactionValue))
+Transaction <- filter(data,sum_1 >130000)
+Transaction
+```
+4.The variable is read as a categorical when you read data from the file. Now we need to explicitly instruct R to interpret this as a Date variable.
+"POSIXlt" and "POSIXct" are two powerful object classes in R to deal with date and time. Click here for more information. First let’s convert ‘InvoiceDate’ into a POSIXlt object.
+```{r}
+Temp=strptime(ORetail$InvoiceDate,format='%m/%d/%Y %H:%M',tz='GMT')
+head(Temp)
+```
+Now, let’s separate date, day of the week and hour components dataframe with names as New_Invoice_Date, Invoice_Day_Week and New_Invoice_Hour:
+```{r}
+#Converting InvoiceDate to datetime format
+ORetail$InvoiceDate <- as.POSIXct(ORetail$InvoiceDate, format = "%Y-%m-%d %H:%M:%S")
+
+# Creating new columns for date, day of week, and hour
+ORetail$New_Invoice_Date <- as.Date(ORetail$InvoiceDate)
+ORetail$Invoice_Day_Week <- weekdays(ORetail$InvoiceDate)
+ORetail$New_Invoice_Hour <- format(ORetail$InvoiceDate, format = "%H:%M:%S")
+
+# View the first few rows of the updated dataset
+head(ORetail)
+```
+Date objects have a lot of flexible functions. For example, knowing two date values, the object allows you to know the difference between the two dates in terms of the number days.
+```{r}
+#Create two example date values
+date1 <- as.Date("2023-08-15")
+date2 <- as.Date("2023-09-15")
+
+# Determine the number of days between the two dates
+Days_between <- as.numeric(date2 - date1)
+Days_between
+```
+we can convert dates to days of the week also.So for that,let's create a new variable.
+```{r}
+ORetail$Invoice_Day_Week= weekdays(ORetail$New_Invoice_Date)
+```
+For the Hour, let’s just take the hour (ignore the minute) and convert into a normal numerical value.
+```{r}
+ORetail$New_Invoice_Hour = as.numeric(format(Temp, "%H"))
+```
+Lets define the month as a separate numeric variable too:
+```{r}
+ORetail$New_Invoice_Month = as.numeric(format(Temp, "%m"))
+```
+4.a) Show the percentage of transactions (by numbers) by days of the week.
+```{r}
+# calculate the total number of transactions for each day of the week
+day_counts <- table(ORetail$Invoice_Day_Week)
+
+# calculate the percentage of transactions for each day of the week
+day_percents <- round(100 * prop.table(day_counts), digits = 2)
+
+# combine the day counts and percents into a data frame
+day_summary <- data.frame(Day = names(day_counts),
+                          TotalNumber = day_counts,
+                          Percentage = day_percents)
+
+# display the resulting data frame
+day_summary
+
+```
+4.b) Show the percentage of transactions (by transaction volume) by days of the week.
+```{r}
+d1<-summarise(group_by(ORetail,Invoice_Day_Week),Transaction_Volume=sum(TransactionValue))
+d2<-mutate(d1,percentage=(Transaction_Volume/sum(Transaction_Volume))*100)
+d2
+```
+4.c) Show the percentage of transactions (by transaction volume) by month of the year.
+```{r}
+m1<-summarise(group_by(ORetail,New_Invoice_Month),Transaction_Volume=sum(TransactionValue))
+m2<-mutate(m1,percentage=(Transaction_Volume/sum(Transaction_Volume))*100)
+m2
+```
+4.d) What was the date with the highest number of transactions from Australia? 
+```{r}
+ORetail <- ORetail %>% mutate(TransactionValue = Quantity * UnitPrice)
+ORetail %>%filter(Country == 'Australia') %>%group_by(New_Invoice_Date) %>%
+summarise(total_transactions = sum(TransactionValue)) %>%
+arrange(desc(total_transactions)) %>% slice(1)
+```
+4.e) The company needs to shut down the website for two consecutive hours for maintenance.What would be the hour of the day to start this so that the distribution is at minimum for the customers? The responsible IT team is available from 7:00 to 20:00 every day.
+```{r}
+library(zoo)
+```
+
+```{r}
+e1<-summarise(group_by(ORetail,New_Invoice_Hour),Transaction_min=n_distinct(InvoiceNo))
+e1<-filter(e1,New_Invoice_Hour>=7&New_Invoice_Hour<=20)
+e12<-rollmax(e1$Transaction_min,3,sum)
+e123<-which.min(e12)
+e123
+```
+# Starting the work at 12 noon is suitable for maintenance.
+5. Plot the histogram of transaction values from Germany. Use the hist() function to plot. 
+```{r}
+Germany_data <- subset(ORetail,Country == "Germany")
+hist(Germany_data$TransactionValue,xlim = c(-600,900),breaks=100,xlab = "Transaction Values of Germany",ylim = c(0,6000),ylab = "Frequency",main = "Germany Transaction Values Histogram")
+```
+6. Which customer had the highest number of transactions? Which customer is most valuable (i.e.highest total sum of transactions)?
+```{r}
+ORetail1 <- na.omit(ORetail)
+result1 <- summarise(group_by(ORetail1,CustomerID), sum2= sum(TransactionValue))
+result1[which.max(result1$sum2),]
+```
+
+```{r}
+data2 <- table(ORetail$CustomerID)
+data2 <- as.data.frame(data2)
+result2 <- data2[which.max(data2$Freq),]
+result2
+```
+7. Calculate the percentage of missing values for each variable in the dataset.
+```{r}
+missing_values <- colMeans(is.na(ORetail) * 100)
+missing_values
+```
+8. What are the number of transactions with missing CustomerID records by countries?
+```{r}
+ORetail2 <- ORetail %>% filter(is.na(CustomerID)) %>% group_by(Country)
+summary(ORetail2$Country)
+```
+9.On average, how often the costumers comeback to the website for their next shopping? (i.e. what is the average number of days between consecutive shopping).
+```{r}
+library(dplyr)
+
+#convert InvoiceDate to proper format
+ORetail$InvoiceDate <- as.POSIXct(ORetail$InvoiceDate, format="%Y-%m-%d %H:%M:%S")
+
+# subset the data to include only CustomerID and InvoiceDate
+custo_dates <- select(ORetail, CustomerID, InvoiceDate)
+
+# sort the data by CustomerID and InvoiceDate
+custo_dates <- arrange(custo_dates, CustomerID, InvoiceDate)
+
+# calculate time difference between consecutive shopping trips for each customer
+custo_times <- group_by(custo_dates, CustomerID) %>%
+mutate(diff_days = as.numeric(difftime(InvoiceDate, lag(InvoiceDate), units = "days")))
+
+# calculate the average time difference across all customers
+avg_days_between_shopping <- mean(na.omit(custo_times$diff_days))
+avg_days_between_shopping
+```
+10. In the retail sector, it is very important to understand the return rate of the goods purchased by customers. In this example, we can define this quantity, simply, as the ratio of the number of transactions cancelled (regardless of the transaction value) over the total number of transactions.With this definition, what is the return rate for the French customers?Consider the cancelled transactions as those where the ‘Quantity’ variable has a negative value.
+```{r}
+ORetail_table <- filter(ORetail, Country == "France")
+totalrow <- nrow(ORetail_table)
+total_transactions <- nrow(ORetail_table)
+cancelled_transactions <- nrow(filter(ORetail_table, TransactionValue < 0))
+return_rate <- cancelled_transactions / total_transactions
+return_rate
+```
+11. What is the product that has generated the highest revenue for the retailer? (i.e. item with the highest total sum of ‘TransactionValue’).
+```{r}
+product_revenue <- tapply(ORetail$TransactionValue, ORetail$StockCode, sum)
+product_with_highest_revenue <- names(product_revenue)[which.max(product_revenue)]
+product_with_highest_revenue
+```
+12. How many unique customers are represented in the dataset? You can use unique() and length() functions.
+```{r}
+uniq_custo <- unique(ORetail$CustomerID)
+number_of_uniq_custo <- length(uniq_custo)
+number_of_uniq_custo
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
