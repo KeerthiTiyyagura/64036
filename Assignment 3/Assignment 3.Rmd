@@ -1,0 +1,150 @@
+---
+title: "Assignment 3"
+author: "Keerthi Tiyyagura"
+date: "2023-10-29"
+output:
+  word_document: default
+  html_document: default
+  pdf_document: default
+---
+
+```{r}
+# To create two variables X and Y
+set.seed(2017)
+X <- runif(100)*10
+Y <- X*4+3.45
+Y <- rnorm(100)*0.29*Y+Y
+```
+1.a)Plot Y against X. Include a screenshot of the plot in your submission. Using the File menu you can save the graph as a picture on your computer. Based on the plot do you think we can fit a linear model to explain Y based on X?
+```{r}
+# Plot Y against X
+cor(X,Y)
+```
+```{r}
+plot(X,Y)
+# Yes,we can fit a linear model to explain Y based on X with a positive correlation.
+```
+b)Construct a simple linear model of Y based on X. Write the equation that explains Y based on X. What is the accuracy of this model?
+```{r}
+# Fit a linear model
+model <- lm(Y~X)
+summary(model)
+```
+```{r}
+coefficients(model)
+# Y=3.6108X+4.4655 is the model equation
+# The accuracy of the above model is 65.17 percent.
+```
+c)How the Coefficient of Determination, R^2, of the model above is related to the correlation coefficient of X and Y?
+```{r}
+# Coefficient of determination
+cor(X,Y)^2
+# (Correlation Coefficient)ˆ2=Coefficient of Determination
+```
+2.
+```{r}
+head(mtcars)
+```
+2.a)James wants to buy a car. He and his friend, Chris, have different opinions about the Horse Power (hp) of cars. James think the weight of a car (wt) can be used to estimate the Horse Power of the car while Chris thinks the fuel consumption expressed in Mile Per Gallon (mpg),is a better estimator of the (hp). Who do you think is right? Construct simple linear models using mtcars data to answer the question.
+```{r}
+summary(lm(hp~wt,data = mtcars))
+```
+
+```{r}
+summary(lm(hp~mpg,data = mtcars))
+# By looking at the values, Chris is right, mpg had a high r square value of 60% compared to weight.
+```
+
+```{r}
+# Fit simple linear models using mtcars dataset.
+data(mtcars)
+model.wt <- lm(hp~wt,data = mtcars)
+model.mpg <- lm(hp~mpg,data = mtcars)
+```
+
+```{r}
+summary(model.wt)
+```
+
+```{r}
+summary(model.mpg)
+```
+2.b)Build a model that uses the number of cylinders (cyl) and the mile per gallon (mpg) values of a car to predict the car Horse Power (hp). Using this model, what is the estimated Horse Power of a car with 4 calendar and mpg of 22?
+```{r}
+summary(model <- lm(hp~cyl+mpg,data = mtcars))
+```
+
+```{r}
+(model$coefficients[2]*4)+(model$coefficients[1])+(model$coefficients[3]*22)
+```
+
+```{r}
+predict(model,data.frame(cyl=4,mpg=22),interval = "prediction",level = 0.85)
+```
+
+```{r}
+# Installing package "mlbench"
+library(mlbench)
+data(BostonHousing)
+```
+3.a)Build a model to estimate the median value of owner-occupied homes (medv)based on the following variables: crime crate (crim), proportion of residential land zoned for lots over 25,000 sq.ft (zn), the local pupil-teacher ratio (ptratio) and weather the whether the tract bounds Chas River(chas). Is this an accurate model? (Hint check R 2 ) 
+```{r}
+model1 <- lm(medv~crim+zn+ptratio+chas,data = BostonHousing)
+summary(model1)
+# Due to the model's extremely low R square value of 36%, it is not particularly accurate.
+```
+3.b.1)Imagine two houses that are identical in all aspects but one bounds the Chas River and the other does not. Which one is more expensive and by how much?
+```{r}
+summary(model2 <- lm(medv~chas,data = BostonHousing))
+```
+
+```{r}
+model2$coefficients
+```
+
+```{r}
+(model2$coefficients[2]*0)+model2$coefficients[1]
+```
+
+```{r}
+(model2$coefficients[2]*1)+model2$coefficients[1]
+# The home with chas of 1 is more expensive than the house without chas of 0 with a value of 4.3 utility
+```
+3.b.2)Imagine two houses that are identical in all aspects but in the neighborhood of one of them the pupil-teacher ratio is 15 and in the other one is 18. Which one is more expensive and by how much?
+```{r}
+summary(model3 <- lm(medv~ptratio,data = BostonHousing))
+```
+
+```{r}
+(model3$coefficients[2]*15)+model3$coefficients[1]
+```
+
+```{r}
+(model3$coefficients[2]*18)+model3$coefficients[1]
+#  The cost of the house with the ptratio of 15 is more expensive than the cost of the house with the ptratio 18 with a value of 6.47.
+```
+3.c)Which of the variables are statistically important (i.e. related to the house price)? Hint: use the p-values of the coefficients to answer.
+```{r}
+summary(model1)
+#  If your p-value is low ( 0.05), you can reject the null hypothesis.
+```
+3.d)Use the anova analysis and determine the order of importance of these four variables.
+```{r}
+anova(model1)
+# The order of importance of these four variables by comparing the p values are
+# 1) crim
+# 2) ptratio
+# 3) zn
+# 4) chas
+```
+
+
+
+
+
+
+
+
+
+
+
